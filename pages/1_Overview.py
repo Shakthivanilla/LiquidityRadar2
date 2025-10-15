@@ -47,7 +47,16 @@ st.markdown("---")
 
 # Display data table
 st.subheader("📊 Member Data Table")
-st.dataframe(df.head(display_limit), width='stretch')
+# Reorder columns to place Risk Insights next to name
+cols = df.columns.tolist()
+if 'name' in cols and 'Risk Insights' in cols:
+    cols.remove('Risk Insights')
+    name_idx = cols.index('name')
+    cols.insert(name_idx + 1, 'Risk Insights')
+    df_display = df[cols]
+else:
+    df_display = df
+st.dataframe(df_display.head(display_limit), width='stretch')
 
 st.markdown("---")
 # Forecast for top member
