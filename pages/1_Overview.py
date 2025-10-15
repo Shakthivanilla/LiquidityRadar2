@@ -12,18 +12,7 @@ if os.path.exists(css_path):
 
 # Background handled by CSS - no need for image overlay
 
-# Try to show lottie animation if library available, else show title
-try:
-    from streamlit_lottie import st_lottie
-    import json
-    lottie_path = os.path.join(os.path.dirname(__file__), "..", "assets", "sci_fi_header_lottie.json")
-    with open(lottie_path, "r", encoding="utf-8") as f:
-        lottie_json = json.load(f)
-    st_lottie(lottie_json, height=200)
-except Exception:
-    st.title("Overview — LiquidityRadar")
-
-st.title("Overview")
+st.title("📊 Overview")
 
 # Load data
 df = fetch_member_data()
@@ -50,17 +39,17 @@ st.markdown("---")
 # ===============================
 # MEMBER DATA TABLE (Collapsible)
 # ===============================
-with st.expander("📊 Member Data Table", expanded=True):
-    # Reorder columns to place Risk Insights next to name
-    cols = df.columns.tolist()
-    if 'name' in cols and 'Risk Insights' in cols:
-        cols.remove('Risk Insights')
-        name_idx = cols.index('name')
-        cols.insert(name_idx + 1, 'Risk Insights')
-        df_display = df[cols]
-    else:
-        df_display = df
-    st.dataframe(df_display.head(display_limit), width='stretch')
+st.subheader("📊 Member Data Table")
+# Reorder columns to place Risk Insights next to name
+cols = df.columns.tolist()
+if 'name' in cols and 'Risk Insights' in cols:
+    cols.remove('Risk Insights')
+    name_idx = cols.index('name')
+    cols.insert(name_idx + 1, 'Risk Insights')
+    df_display = df[cols]
+else:
+    df_display = df
+st.dataframe(df_display.head(display_limit), width='stretch')
 
 st.markdown("---")
 
