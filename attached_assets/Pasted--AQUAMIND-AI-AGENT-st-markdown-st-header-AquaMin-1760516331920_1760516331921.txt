@@ -1,0 +1,67 @@
+# 🤖 AQUAMIND AI AGENT
+# ===============================
+st.markdown("---")
+st.header("🤖 AquaMind AI — Autonomous Liquidity Assistant")
+
+st.markdown("""
+Meet **AquaMind**, your always-on liquidity co-pilot.
+It continuously scans financial data, detects risks, and provides proactive insights.
+""")
+
+if st.button("🚀 Activate AquaMind Agent"):
+    with st.spinner("AquaMind is analyzing your liquidity landscape..."):
+        try:
+            agent_prompt = f"""
+            You are AquaMind, an autonomous AI liquidity agent.
+            Your job is to:
+            1. Detect any abnormal liquidity risks.
+            2. Predict who will be at high risk next quarter.
+            3. Provide actionable recommendations with confidence scores.
+            4. Suggest any stress scenarios that could impact stability.
+
+            Data:
+            {df.to_string(index=False)}
+
+            Respond concisely in the following format:
+            **Detected Risks:** ...
+            **Predicted High-Risk Members:** ...
+            **Recommended Actions:** ...
+            **Confidence:** (as %)
+            """
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{
+                    "role": "user",
+                    "content": agent_prompt
+                }],
+                temperature=0.4,
+            )
+            ai_agent_output = response.choices[0].message.content
+
+            st.success("✅ AquaMind Agent Report Ready")
+            st.markdown(ai_agent_output)
+
+            # Extract confidence for visualization
+            match = re.search(r"(\d{2,3})\s*%|confidence[:\s]+(\d{1,3})",
+                              ai_agent_output.lower())
+            confidence_score = int(match.group(1)) if match else 85
+            st.progress(confidence_score)
+            st.caption(f"🧭 AquaMind Confidence Level: {confidence_score}%")
+
+            # Optional: auto-generate quick Monte Carlo visualization
+            st.subheader("🎲 Monte Carlo Liquidity Stress Snapshot")
+            sims = np.random.normal(df["risk_ratio"].mean(), 0.5, 5000)
+            fig, ax = plt.subplots()
+            ax.hist(sims, bins=40, color="skyblue", edgecolor="black")
+            ax.axvline(2,
+                       color="red",
+                       linestyle="--",
+                       label="High Risk Threshold (2x)")
+            ax.set_title("Monte Carlo Simulated Risk Ratios")
+            ax.set_xlabel("Simulated Risk Ratio")
+            ax.set_ylabel("Frequency")
+            ax.legend()
+            st.pyplot(fig)
+
+        except Exception as e:
+            st.error(f"Error running AquaMind Agent: {e}")
