@@ -56,7 +56,10 @@ st.markdown("---")
 # ===============================
 # ARIMA LIQUIDITY FORECASTING (Collapsible)
 # ===============================
-with st.expander("🔮 Liquidity Projection (Next 3 Months)", expanded=False):
+st.markdown("---")
+st.subheader("🔮 Liquidity Projection (Next 3 Months)")
+
+if st.checkbox("Show Liquidity Forecast", value=False, key="show_forecast_section"):
     st.markdown("""
     Using **ARIMA (AutoRegressive Integrated Moving Average)** time series forecasting to predict future liquidity trends.
     Select a member below to see their projected cash buffer and credit headroom.
@@ -96,3 +99,5 @@ with st.expander("🔮 Liquidity Projection (Next 3 Months)", expanded=False):
             """)
     else:
         st.info("Select a member to view forecast.")
+else:
+    st.info("Enable 'Show Liquidity Forecast' to access ARIMA-based forecasting.")
