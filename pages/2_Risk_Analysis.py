@@ -18,4 +18,4 @@ with st.expander('Filters'):
 filtered = df[df['risk_ratio'] >= min_ratio] if 'risk_ratio' in df.columns else df
 filtered = filtered[filtered.get('risk_level', []).isin(show_level)] if 'risk_level' in filtered.columns else filtered
 
-st.dataframe(filtered.style.map(color_risk, subset=['risk_level']) if 'risk_level' in filtered.columns else filtered, use_container_width=True)
+st.dataframe(filtered.style.map(color_risk, subset=['risk_level']) if 'risk_level' in filtered.columns else filtered, width='stretch')

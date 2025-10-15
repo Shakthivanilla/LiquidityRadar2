@@ -24,7 +24,7 @@ if os.path.exists(css_path):
 # ===============================
 logo_path = os.path.join("assets", "logo.png")
 if os.path.exists(logo_path):
-    st.sidebar.image(logo_path, use_container_width=True)
+    st.sidebar.image(logo_path, width='stretch')
 st.sidebar.markdown("### 💧 Smart Liquidity Monitor")
 st.sidebar.markdown("_AI-driven Risk Intelligence_")
 
