@@ -83,20 +83,8 @@ if st.checkbox("Show Liquidity Forecast", value=False, key="show_forecast_sectio
             fig = create_liquidity_forecast(selected_member_data, selected_member_name)
             st.pyplot(fig)
         
-        # Model Information
-        with st.expander("ℹ️ About ARIMA Forecasting"):
-            st.markdown("""
-            **ARIMA Model:** AutoRegressive Integrated Moving Average (2,1,1)
-            - **Order (2,1,1):** 2 autoregressive terms, 1 differencing, 1 moving average term
-            - **Historical Data:** 12 months of simulated historical patterns
-            - **Forecast Horizon:** 3 months ahead
-            - **Features:** Cash Buffer and Credit Headroom trends
-            
-            **How to Interpret:**
-            - **Upward trend:** Improving liquidity position
-            - **Downward trend:** Potential liquidity concerns
-            - **Gap widening:** Risk ratio may be increasing
-            """)
+        # Model Information (displayed directly without expander)
+        st.caption("ℹ️ **About ARIMA Forecasting:** AutoRegressive Integrated Moving Average (2,1,1) model using 12 months of historical patterns to forecast 3 months ahead.")
     else:
         st.info("Select a member to view forecast.")
 else:
