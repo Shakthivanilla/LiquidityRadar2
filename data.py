@@ -16,9 +16,9 @@ def get_snowflake_config() -> Dict[str, Optional[str]]:
         "user": os.environ.get("SF_USER"),
         "password": os.environ.get("SF_PASS"),
         "account": os.environ.get("SF_ACCOUNT"),
-        "warehouse": "COMPUTE_WH",
-        "database": os.environ.get("SF_DB", "LIQUIDITY_RADAR"),
-        "schema": os.environ.get("SF_SCHEMA", "HACKATHON")
+        "warehouse": os.environ.get("SF_WAREHOUSE", "AIX_SF_WH"),
+        "database": os.environ.get("SF_DB", "AIX_SF_DB"),
+        "schema": os.environ.get("SF_SCHEMA", "PUBLIC")
     }
 
 @st.cache_resource
@@ -65,7 +65,7 @@ def fetch_member_data() -> Optional[pd.DataFrame]:
         return None
     
     try:
-        query = "SELECT member_id, name, cash_buffer_usd, exposure_usd, updated_at FROM members;"
+        query = "SELECT member_id, name, cash_buffer_usd, exposure_usd, updated_at FROM AIX_SF_DB.PUBLIC.MEMBERS_NEW;"
         cursor = conn.cursor()
         cursor.execute(query)
         df = cursor.fetch_pandas_all()
