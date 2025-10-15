@@ -71,7 +71,7 @@ try:
     # Display the Results
     st.markdown("#### 📊 ML Prediction Results")
     st.dataframe(
-        df[['name', 'cash_buffer_usd', 'credit_headroom_usd', 'Predicted_Risk_Probability', 'Predicted_Risk_Label']],
+        df[['name', 'Predicted_Risk_Label', 'cash_buffer_usd', 'credit_headroom_usd', 'Predicted_Risk_Probability']],
         width='stretch'
     )
 
