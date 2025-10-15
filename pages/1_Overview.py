@@ -44,6 +44,12 @@ col3.metric("Avg Risk Ratio", f"{df['risk_ratio'].mean():.2f}" if 'risk_ratio' i
 col4.metric("Updated At", str(df['updated_at'].max()) if 'updated_at' in df.columns else "N/A")
 
 st.markdown("---")
+
+# Display data table
+st.subheader("📊 Member Data Table")
+st.dataframe(df.head(display_limit), width='stretch')
+
+st.markdown("---")
 # Forecast for top member
 top = df.sort_values('risk_ratio', ascending=False).head(1)
 if not top.empty:
