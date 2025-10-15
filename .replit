@@ -1,6 +1,7 @@
 modules = ["python-3.11"]
 [agent]
 integrations = ["python_openai:1.0.0"]
+expertMode = true
 
 [nix]
 channel = "stable-25_05"
@@ -45,7 +46,3 @@ externalPort = 3001
 [[ports]]
 localPort = 33039
 externalPort = 3000
-
-[[ports]]
-localPort = 42155
-externalPort = 3002
