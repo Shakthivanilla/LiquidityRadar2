@@ -1,0 +1,60 @@
+2. Liquidity Projection (Time-Series Forecasting)
+For forecasting, we'll use a simple but powerful ARIMA (AutoRegressive Integrated Moving Average) model from the statsmodels library. This model analyzes past data to project future trends. Like before, we'll simulate historical data for a selected member to train the model.
+
+How to Implement:
+
+Replace the "LIQUIDITY FORECAST SIMULATION" section of your code with this block.
+
+Python
+
+# ===============================
+#  🔮 LIQUIDITY FORECAST SIMULATION (Using statsmodels ARIMA)
+# ===============================
+st.markdown("---")
+st.subheader("🔮 Liquidity Projection (Next 3 Months)")
+
+from statsmodels.tsa.arima.model import ARIMA
+import warnings
+warnings.filterwarnings("ignore") # Suppress ARIMA warnings
+
+member = st.selectbox('Select Member', df['NAME'])
+selected = df[df['NAME'] == member].iloc[0]
+
+# --- Step 1: Simulate Historical Data for the Selected Member ---
+# In a real-world scenario, you would query this member's past 12-24 months of data.
+# We create 12 months of historical data with a slight upward trend.
+np.random.seed(42)
+historical_months = 12
+base_cash = selected['CASH_BUFFER_USD']
+base_credit = selected['CREDIT_HEADROOM_USD']
+
+# Generate a series with some trend and noise
+cash_history = pd.Series([base_cash * (1 + 0.01 * i + np.random.normal(0, 0.05)) for i in range(-historical_months, 0)])
+credit_history = pd.Series([base_credit * (1 + 0.008 * i + np.random.normal(0, 0.04)) for i in range(-historical_months, 0)])
+
+# --- Step 2: Train ARIMA models and Forecast ---
+# We create one forecast for cash and one for credit.
+# The order (p,d,q) is a simple starting point; it can be tuned for better accuracy.
+# Cash Forecast
+cash_model = ARIMA(cash_history, order=(2, 1, 1)).fit()
+cash_forecast_values = cash_model.forecast(steps=3)
+
+# Credit Forecast
+credit_model = ARIMA(credit_history, order=(2, 1, 1)).fit()
+credit_forecast_values = credit_model.forecast(steps=3)
+
+# --- Step 3: Combine Current and Forecasted Data for Plotting ---
+months = ['Current', 'Month 1', 'Month 2', 'Month 3']
+cash_forecast = [base_cash] + list(cash_forecast_values)
+credit_forecast = [base_credit] + list(credit_forecast_values)
+
+# --- Step 4: Display the Chart ---
+fig, ax = plt.subplots()
+ax.plot(months, cash_forecast, marker='o', label='Cash Buffer Forecast')
+ax.plot(months, credit_forecast, marker='o', label='Credit Headroom Forecast')
+ax.set_ylabel('USD')
+ax.set_title(f'Projected Liquidity for {member}')
+ax.legend()
+ax.grid(True, linestyle='--', alpha=0.6)
+st.pyplot(fig)
+By integrating these genuine machine learning models, you significantly elevate the technical depth and credibility of your project, demonstrating a clear path from a proof-of-concept to a robust, data-driven tool.

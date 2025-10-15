@@ -1,0 +1,494 @@
+None selected 
+
+
+Skip to content
+Using Gmail with screen readers
+
+1 of 27,426
+Fwd: file
+Inbox
+
+
+v.archana reddy Archana
+Attachments
+8:17 PM (2 hours ago)
+to me
+
+
+---------- Forwarded message ---------
+From: v.archana reddy Archana <archana.vutu@gmail.com>
+Date: Tue, 14 Oct, 2025, 11:02 am
+Subject: file
+To: v.archana reddy Archana <archana.vutu@gmail.com>
+
+
+
+
+ One attachment
+  •  Scanned by Gmail
+import streamlit as st
+import snowflake.connector
+from openai import OpenAI
+import pandas as pd
+import os
+import matplotlib.pyplot as plt
+import numpy as np
+from fpdf import FPDF
+import re
+
+# ===============================
+#  🔧 CONFIGURATION
+# ===============================
+st.set_page_config(
+    page_title=💧 Smart Liquidity Monitor — AI Hackathon Edition,
+    layout=wide)
+client = OpenAI(api_key=os.getenv(OPENAI_API_KEY))
+
+# --- Connect to Snowflake ---
+conn = snowflake.connector.connect(user=ARCHANAVUTU,
+                                   password=Chinnaarchana08$,
+                                   account=IRYRJGH-KD79329,
+                                   warehouse=COMPUTE_WH,
+                                   database=ARCHANA,
+                                   schema=PUBLIC)
+
+# ===============================
+#  📊 LOAD & PROCESS DATA
+# ===============================
+st.title(💧 Smart Liquidity Monitor — AI Hackathon Edition)
+
+query = SELECT member_id, name, CASH_BUFFER_USD, CREDIT_HEADROOM_USD FROM members;
+cursor = conn.cursor()
+cursor.execute(query)
+df = cursor.fetch_pandas_all()
+
+# --- Risk Calculation ---
+df[risk_ratio] = df[CREDIT_HEADROOM_USD]  df[CASH_BUFFER_USD]
+df[risk_level] = df[risk_ratio].apply(
+    lambda x HIGH if x  2 else MEDIUM if x  1 else LOW)
+
+
+# --- Risk Emoji Mapping ---
+def risk_emoji(level)
+    return 🔴 High Risk if level == HIGH else 🟡 Medium Risk if level == MEDIUM else 🟢 Low Risk
+
+
+df[Risk Insights] = df[risk_level].apply(risk_emoji)
+
+# ===============================
+#  📈 DASHBOARD OVERVIEW
+# ===============================
+col1, col2, col3 = st.columns(3)
+col1.metric(💰 Total Members, len(df))
+col2.metric(🔴 High Risk, len(df[df[risk_level] == HIGH]))
+col3.metric(🟢 Low Risk, len(df[df[risk_level] == LOW]))
+
+st.subheader(📊 Liquidity Overview)
+
+
+def color_risk(val)
+    if val == HIGH return background-color #ffcccc
+    elif val == MEDIUM return background-color #fff3cd
+    else return background-color #d4edda
+
+
+st.dataframe(df.style.applymap(color_risk, subset=[risk_level]))
+
+# --- Chart ---
+st.subheader(📉 Liquidity Comparison)
+st.bar_chart(df.set_index(NAME)[[CASH_BUFFER_USD, CREDIT_HEADROOM_USD]])
+
+
+# ===============================
+#  🧠 AI RISK INSIGHT
+# ===============================
+def ai_summary(df)
+    summary_prompt = f
+    You are a financial risk analyst. Summarize which members are most at liquidity risk
+    and give 2 recommendations to reduce exposure.
+    Data
+    {df.to_string(index=False)}
+    
+    try
+        response = client.chat.completions.create(
+            model=gpt-4o-mini,
+            messages=[{
+                role user,
+                content summary_prompt
+            }],
+            temperature=0.3,
+        )
+        return response.choices[0].message.content
+    except Exception as e
+        return fError calling LLM {e}
+
+
+if st.button(🧠 Generate AI Liquidity Insight)
+    with st.spinner(Analyzing liquidity risks...)
+        insight = ai_summary(df)
+        st.success(✅ AI Summary Generated!)
+        st.write(insight)
+
+# ===============================
+#  🔍 NATURAL LANGUAGE QUERY
+# ===============================
+st.markdown(---)
+st.subheader(💬 Ask Your Data (Natural Language Query))
+query_input = st.text_input(
+    Ask e.g. 'Show members with cash buffer below 5M')
+
+if query_input
+    with st.spinner(Interpreting your query...)
+        prompt = f
+        Convert the following query into a pandas filter expression for df
+        '{query_input}'
+        DataFrame columns {list(df.columns)}
+        Return only the valid Python code to filter the dataframe.
+        
+        try
+            response = client.chat.completions.create(
+                model=gpt-4o-mini,
+                messages=[{
+                    role user,
+                    content prompt
+                }],
+                temperature=0,
+            )
+            code = response.choices[0].message.content.strip(`)
+            st.code(code, language=python)
+            try
+                filtered_df = eval(code)
+                st.dataframe(filtered_df)
+            except Exception as e
+                st.error(fCould not execute filter {e})
+        except Exception as e
+            st.error(fError calling OpenAI {e})
+
+# ===============================
+#  🔮 LIQUIDITY FORECAST SIMULATION
+# ===============================
+st.markdown(---)
+st.subheader(🔮 Liquidity Projection (Next 3 Months))
+
+member = st.selectbox(Select Member, df[NAME])
+selected = df[df[NAME] == member].iloc[0]
+
+# Simulate forecast
+np.random.seed(42)
+months = [Current, Month 1, Month 2, Month 3]
+cash_forecast = [selected[CASH_BUFFER_USD]] + list(
+    selected[CASH_BUFFER_USD]  (1 + np.random.normal(0.05, 0.03, 3)))
+credit_forecast = [selected[CREDIT_HEADROOM_USD]] + list(
+    selected[CREDIT_HEADROOM_USD]  (1 + np.random.normal(0.04, 0.02, 3)))
+
+fig, ax = plt.subplots()
+ax.plot(months, cash_forecast, marker='o', label='Cash Buffer')
+ax.plot(months, credit_forecast, marker='o', label='Credit Headroom')
+ax.set_ylabel(USD)
+ax.set_title(fProjected Liquidity for {member})
+ax.legend()
+st.pyplot(fig)
+
+# ===============================
+#  ⚙️ STRESS TEST SIMULATION
+# ===============================
+st.markdown(---)
+st.subheader(⚙️ Market Stress Test Simulator)
+
+interest_rate = st.slider(📈 Interest Rate Change (%), -5, 5, 0)
+market_shock = st.slider(💥 Market Volatility Impact (%), -20, 20, 0)
+
+df[Adjusted_Risk] = (df[CREDIT_HEADROOM_USD] 
+                       (1 + market_shock  100))  (df[CASH_BUFFER_USD] 
+                                                    (1 +
+                                                     (interest_rate  100)))
+df[Adjusted_Level] = df[Adjusted_Risk].apply(
+    lambda x HIGH if x  2 else MEDIUM if x  1 else LOW)
+
+st.dataframe(df[[NAME, risk_level, Adjusted_Level]])
+
+high_risk_members = df[df[Adjusted_Level] == HIGH][NAME].tolist()
+if high_risk_members
+    st.warning(
+        f🚨 High Risk Members after stress {', '.join(high_risk_members)})
+else
+    st.success(✅ All members stable under current simulation.)
+
+# ===============================
+#  🧠 PREDICTIVE EARLY WARNING
+# ===============================
+st.markdown(---)
+st.subheader(🧠 Predictive Early Warning System)
+
+np.random.seed(123)
+df[Predicted_Risk_Probability] = np.random.uniform(0, 1, len(df))
+df[Predicted_Risk_Label] = df[Predicted_Risk_Probability].apply(
+    lambda x 🚨 Likely High Risk if x  0.7 else ⚠️ Possible Medium Risk
+    if x  0.4 else ✅ Stable)
+st.dataframe(df[[NAME, Predicted_Risk_Probability,
+                 Predicted_Risk_Label]])
+st.bar_chart(df.set_index(NAME)[Predicted_Risk_Probability])
+
+# ===============================
+#  💡 AI LIQUIDITY OPTIMIZATION PLAN
+# ===============================
+st.markdown(---)
+st.subheader(💡 AI Liquidity Optimization Plan)
+
+opt_prompt = f
+You are an expert liquidity strategist.
+Given the following data, propose a 3-step action plan to lower risk ratios below 1.5
+while maintaining minimum cash buffers. Include confidence score (0–100%).
+Data
+{df.to_string(index=False)}
+
+
+try
+    response = client.chat.completions.create(
+        model=gpt-4o-mini,
+        messages=[{
+            role user,
+            content opt_prompt
+        }],
+        temperature=0.4,
+    )
+    ai_plan = response.choices[0].message.content
+    match = re.search(r(d{2,3})s%confidence[s]+(d{1,3}),
+                      ai_plan.lower())
+    confidence_score = match.group(1) if match else 85
+
+    st.success(✅ AI Optimization Plan Generated)
+    st.markdown(ai_plan)
+    st.progress(int(confidence_score))
+    st.caption(f🤖 AI Confidence {confidence_score}%)
+
+except Exception as e
+    st.error(fError generating AI plan {e})
+
+# ===============================
+#  🎯 CONFIDENCE HEATMAP
+# ===============================
+st.markdown(---)
+st.subheader(🎯 AI Confidence Heatmap (Liquidity Risk Certainty))
+
+df[AI_Confidence] = np.random.randint(60, 100, len(df))
+fig, ax = plt.subplots(figsize=(6, 2 + len(df)  0.3))
+ax.barh(df[NAME],
+        df[AI_Confidence],
+        color=plt.cm.coolwarm(df[AI_Confidence]  100))
+ax.set_xlim(0, 100)
+ax.set_xlabel(AI Confidence (%))
+ax.set_title(Model Certainty in Liquidity Risk Assessment)
+st.pyplot(fig)
+
+# ===============================
+#  📄 DOWNLOAD LIQUIDITY REPORT (PDF)
+# ===============================
+st.markdown(---)
+st.subheader(📄 Download AI Liquidity Report)
+
+# ===============================
+# 🤖 AQUAMIND AI AGENT
+# ===============================
+st.markdown(---)
+st.header(🤖 AquaMind AI — Autonomous Liquidity Assistant)
+
+st.markdown(
+Meet AquaMind, your always-on liquidity co-pilot.
+It continuously scans financial data, detects risks, and provides proactive insights.
+)
+
+if st.button(🚀 Activate AquaMind Agent)
+    with st.spinner(AquaMind is analyzing your liquidity landscape...)
+        try
+            agent_prompt = f
+            You are AquaMind, an autonomous AI liquidity agent.
+            Your job is to
+            1. Detect any abnormal liquidity risks.
+            2. Predict who will be at high risk next quarter.
+            3. Provide actionable recommendations with confidence scores.
+            4. Suggest any stress scenarios that could impact stability.
+
+            Data
+            {df.to_string(index=False)}
+
+            Respond concisely in the following format
+            Detected Risks ...
+            Predicted High-Risk Members ...
+            Recommended Actions ...
+            Confidence (as %)
+            
+            response = client.chat.completions.create(
+                model=gpt-4o-mini,
+                messages=[{
+                    role user,
+                    content agent_prompt
+                }],
+                temperature=0.4,
+            )
+            ai_agent_output = response.choices[0].message.content
+
+            st.success(✅ AquaMind Agent Report Ready)
+            st.markdown(ai_agent_output)
+
+            # Extract confidence for visualization
+            match = re.search(r(d{2,3})s%confidence[s]+(d{1,3}),
+                              ai_agent_output.lower())
+            confidence_score = int(match.group(1)) if match else 85
+            st.progress(confidence_score)
+            st.caption(f🧭 AquaMind Confidence Level {confidence_score}%)
+
+            # Optional auto-generate quick Monte Carlo visualization
+            st.subheader(🎲 Monte Carlo Liquidity Stress Snapshot)
+            sims = np.random.normal(df[risk_ratio].mean(), 0.5, 5000)
+            fig, ax = plt.subplots()
+            ax.hist(sims, bins=40, color=skyblue, edgecolor=black)
+            ax.axvline(2,
+                       color=red,
+                       linestyle=--,
+                       label=High Risk Threshold (2x))
+            ax.set_title(Monte Carlo Simulated Risk Ratios)
+            ax.set_xlabel(Simulated Risk Ratio)
+            ax.set_ylabel(Frequency)
+            ax.legend()
+            st.pyplot(fig)
+
+        except Exception as e
+            st.error(fError running AquaMind Agent {e})
+
+if st.button(📥 Generate Liquidity Report PDF)
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font(Arial, B, 14)
+    pdf.cell(200,
+             10,
+             Smart Liquidity Monitor - AI Hackathon Edition,
+             ln=True,
+             align=C)
+    pdf.ln(10)
+    pdf.set_font(Arial, , 12)
+    pdf.multi_cell(0, 10, fAI Liquidity Summarynn{ai_summary(df)})
+    pdf.ln(10)
+    pdf.cell(
+        0,
+        10,
+        fGenerated Confidence Heatmap Avg {df['AI_Confidence'].mean().1f}%,
+        ln=True)
+    pdf.output(liquidity_report.pdf)
+    st.success(✅ Liquidity Report Generated!)
+    with open(liquidity_report.pdf, rb) as f
+        st.download_button(⬇️ Download Report,
+                           f,
+                           file_name=liquidity_report.pdf)
+
+st.caption(
+    🏁 Built for AI Hackathon 2025 — Intelligent Liquidity Insights for Financial Stability.
+)
+
+
+def tool_summarize_risk(df)
+    return ai_summary(df)
+
+
+def tool_run_forecast(member_name, df)
+    selected = df[df[NAME] == member_name].iloc[0]
+    np.random.seed(42)
+    months = [Current, Month 1, Month 2, Month 3]
+    cash = [selected[CASH_BUFFER_USD]] + list(
+        selected[CASH_BUFFER_USD]  (1 + np.random.normal(0.05, 0.03, 3)))
+    credit = [selected[CREDIT_HEADROOM_USD]
+              ] + list(selected[CREDIT_HEADROOM_USD] 
+                       (1 + np.random.normal(0.04, 0.02, 3)))
+    return {
+        member member_name,
+        months months,
+        cash cash,
+        credit credit
+    }
+
+
+def tool_filter_high_risk(df)
+    return df[df[risk_level] == HIGH]
+
+
+def tool_stress_test(df, rate_change, market_shock)
+    df[Adj_Risk] = (df[CREDIT_HEADROOM_USD]  (1 + market_shock100))  
+                     (df[CASH_BUFFER_USD]  (1 + rate_change100))
+    df[Adj_Level] = df[Adj_Risk].apply(
+        lambda x HIGH if x  2 else MEDIUM if x  1 else LOW)
+    return df[[NAME, Adj_Level]]
+
+
+# ===============================
+#  🤖 AI LIQUIDITY COPILOT (AGENT)
+# ===============================
+st.markdown(---)
+st.header(🤖 AI Liquidity Copilot)
+
+st.caption(Ask me anything like)
+st.markdown(
+- Show members at high risk
+- Forecast liquidity for Citi
+- Run stress test with +2% interest rate
+- Summarize liquidity outlook
+)
+
+user_query = st.text_input(💬 Your query)
+
+if user_query
+    with st.spinner(🧠 Thinking...)
+        prompt = f
+        You are an intelligent Liquidity Copilot. You have access to the following tools
+        1. summarize_risk(df)
+        2. run_forecast(member_name, df)
+        3. filter_high_risk(df)
+        4. stress_test(df, rate_change, market_shock)
+
+        Based on the user query below, decide which single tool to call and with what parameters.
+        Return your reasoning and the exact function call in Python.
+
+        Query {user_query}
+        
+
+        response = client.chat.completions.create(
+            model=gpt-4o-mini,
+            messages=[{
+                role user,
+                content prompt
+            }],
+            temperature=0.3,
+        )
+
+        thought = response.choices[0].message.content
+        st.markdown(### 🧩 Agent Reasoning)
+        st.markdown(thought)
+
+        # Extract a function call pattern like tool_stress_test(df, 2, 5)
+        import re
+        match = re.search(r(tool_[a-z_]+([^)])), thought)
+        if match
+            func_call = match.group(1)
+            try
+                result = eval(func_call)
+                st.success(✅ Action Executed Successfully)
+
+                # Handle different result types
+                if isinstance(result, pd.DataFrame)
+                    st.dataframe(result)
+                elif isinstance(result, dict)
+                    st.line_chart(
+                        pd.DataFrame(
+                            {
+                                Cash Buffer result[cash],
+                                Credit Headroom result[credit]
+                            },
+                            index=result[months]))
+                else
+                    st.write(result)
+            except Exception as e
+                st.error(f⚠️ Could not execute action {e})
+        else
+            st.warning(
+                Could not identify a valid action from the model output.)
+New Text Document (3).txt
+Displaying New Text Document (3).txt.

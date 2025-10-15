@@ -1,0 +1,5 @@
+{
+  "high_risk_threshold": 2.0,
+  "low_risk_threshold": 0.8,
+  "display_limit": 50
+}

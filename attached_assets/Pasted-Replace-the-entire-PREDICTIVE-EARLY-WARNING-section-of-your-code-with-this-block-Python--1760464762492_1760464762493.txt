@@ -1,0 +1,51 @@
+Replace the entire "PREDICTIVE EARLY WARNING" section of your code with this block.
+
+Python
+
+# ===============================
+#  🧠 PREDICTIVE EARLY WARNING (Using scikit-learn)
+# ===============================
+st.markdown("---")
+st.subheader("🧠 Predictive Early Warning System")
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import LabelEncoder
+
+# --- Step 1: Simulate Historical Data for Training ---
+# In a real-world scenario, you would load this data from your database.
+# We create 500 historical examples to train our model.
+np.random.seed(42)
+historical_size = 500
+historical_cash = np.random.uniform(1_000_000, 50_000_000, historical_size)
+historical_credit = np.random.uniform(5_000_000, 100_000_000, historical_size)
+historical_risk_ratio = historical_credit / historical_cash
+historical_risk_level = pd.Series(historical_risk_ratio).apply(
+    lambda x: 'HIGH' if x > 2 else 'MEDIUM' if x > 1 else 'LOW'
+)
+X_train = pd.DataFrame({'CASH_BUFFER_USD': historical_cash, 'CREDIT_HEADROOM_USD': historical_credit})
+y_train = historical_risk_level
+
+# --- Step 2: Train the Classification Model ---
+# We use Logistic Regression to predict the risk level.
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# --- Step 3: Make Predictions on Your Current Data ---
+# The model will predict the probability of each class ('HIGH', 'MEDIUM', 'LOW').
+# We select the probability of being in the 'HIGH' risk category.
+X_current = df[['CASH_BUFFER_USD', 'CREDIT_HEADROOM_USD']]
+predicted_probabilities = model.predict_proba(X_current)
+
+# Find the index for the 'HIGH' risk class
+high_risk_index = np.where(model.classes_ == 'HIGH')[0][0]
+df['Predicted_Risk_Probability'] = predicted_probabilities[:, high_risk_index]
+
+# Create a more meaningful label based on the probability
+df['Predicted_Risk_Label'] = df['Predicted_Risk_Probability'].apply(
+    lambda x: '🚨 Likely High Risk' if x > 0.7 else '⚠️ Possible Medium Risk' if x > 0.4 else '✅ Stable'
+)
+
+# --- Step 4: Display the Results ---
+st.dataframe(df[['NAME', 'Predicted_Risk_Probability', 'Predicted_Risk_Label']])
+st.bar_chart(df.set_index('NAME')['Predicted_Risk_Probability'])

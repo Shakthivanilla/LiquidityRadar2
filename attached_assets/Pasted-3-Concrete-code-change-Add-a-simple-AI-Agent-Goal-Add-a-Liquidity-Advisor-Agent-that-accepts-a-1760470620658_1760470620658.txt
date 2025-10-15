@@ -1,0 +1,195 @@
+3) Concrete code change: Add a simple AI Agent
+
+Goal: Add a "Liquidity Advisor Agent" that accepts a free-text query in the Streamlit UI, retrieves top N risky members from your current DataFrame, sends that context plus the user query to Gemini via get_ai_response, and displays the answer + an optional remediation plan.
+
+Below are two copy/paste-ready code blocks: one to add to ai_utils.py and one to add to app.py.
+
+Important: These snippets reuse your existing get_ai_response function and prompts. They are intentionally small and safe (no new external packages).
+
+A — Add this function to ai_utils.py
+
+Place it below get_ai_response().
+
+def run_liquidity_agent(df, user_query, top_k=5, model="gemini-2.5-flash"):
+    """
+    Simple retrieval + prompt agent:
+    - selects top_k rows by risk_ratio
+    - builds a concise context string and asks Gemini the user's question
+    Returns: AI text response (string) or None on error
+    """
+    import pandas as pd
+    from prompts import get_ai_summary_prompt  # optional reuse
+
+    try:
+        if df is None or df.empty:
+            return "No data available to analyze. Please ensure Snowflake connection is configured."
+        # Ensure risk_ratio column exists
+        if "risk_ratio" not in df.columns:
+            # fallback: compute if possible
+            if {"exposure_usd", "cash_buffer_usd"}.issubset(df.columns):
+                df = df.copy()
+                df["risk_ratio"] = df["exposure_usd"] / df["cash_buffer_usd"].replace({0: 1})
+            else:
+                return "Dataset doesn't contain required columns for agent analysis."
+
+        # pick top K risky members
+        top_df = df.sort_values("risk_ratio", ascending=False).head(top_k)
+        # small context: keep only key columns to avoid giant prompt
+        cols_for_prompt = ["member_id", "name", "cash_buffer_usd", "exposure_usd", "risk_ratio", "updated_at"]
+        cols_for_prompt = [c for c in cols_for_prompt if c in top_df.columns]
+        context_csv = top_df[cols_for_prompt].to_csv(index=False)
+
+        # Build agent prompt. Keep it explicit and structured for consistent outputs
+        agent_prompt = f"""
+You are an expert financial risk advisor. The user asked: "{user_query}"
+
+Below is tabular context of the top {top_k} members by liquidity risk (CSV).
+Context:
+{context_csv}
+
+Tasks:
+1) Answer the user's question concisely using the context.
+2) Provide 2-3 actionable remediation steps (prioritized).
+3) Provide a short confidence estimate (0-100%).
+
+Respond in plain text with headings: "Answer:", "Recommended Actions:", "Confidence:".
+"""
+        # call existing wrapper
+        resp = get_ai_response(agent_prompt, model=model)
+        return resp
+    except Exception as e:
+        # keep Streamlit-friendly but don't import st at top-level
+        try:
+            import streamlit as st
+            st.error(f"Agent error: {e}")
+        except Exception:
+            pass
+        return None
+
+B — Add a UI block to app.py
+
+Add this block in your Streamlit app (for example after the existing AI summary button area). It uses the DataFrame df that your app already creates with fetch_member_data.
+
+st.markdown("### 🧠 Liquidity Advisor (Ask a question)")
+agent_query = st.text_input("Ask the Liquidity Advisor (e.g., 'Which members will be at high risk next quarter?')", key="agent_query")
+if st.button("Run Agent", key="run_agent"):
+    if 'df' not in locals():
+        st.error("Data not loaded. Please ensure your data connection is set up.")
+    else:
+        with st.spinner("Running agent..."):
+            from ai_utils import run_liquidity_agent
+            answer = run_liquidity_agent(df, agent_query, top_k=5)
+            if answer:
+                st.markdown("**Agent Response**")
+                st.write(answer)
+            else:
+                st.error("Agent did not return a response. Check logs or API key.")
+
+
+Notes:
+
+df should be the DataFrame you already fetch via fetch_member_data() / calculate_risk_metrics(). If you used different variable names, adapt accordingly.
+
+The agent prompt is deliberately small — it sends only top-K rows. This keeps tokens in control.
+
+4) Steps to add the AI Agent (step-by-step)
+
+Add the function run_liquidity_agent to ai_utils.py (copy code above).
+
+Import or ensure get_ai_response is available in ai_utils.py (it already is).
+
+Insert UI block into app.py where appropriate (after data is loaded).
+
+Ensure environment variable GEMINI_API_KEY is set in your Replit or CI environment (do not commit secrets).
+
+Test locally with a small dataset (you can create a dummy CSV and call the agent).
+
+Add caching (recommended) to fetch_member_data in data.py:
+
+@st.cache_data(ttl=300)  # cache for 5 minutes
+def fetch_member_data(...):
+    ...
+
+
+Add logging for agent calls (e.g., logging.info("Agent query: %s", user_query)).
+
+Monitor API usage & add fallback messaging if Gemini returns an error.
+
+5) Additional useful improvements (quick checklist + code hints)
+A. Improve get_ai_response resiliency (ai_utils.py)
+
+Add retry/backoff (3 retries), and return structured JSON (text + tokens used if available).
+
+Example: wrap client.models.generate_content(...) in for attempt in range(3): try: ... except: time.sleep(2**attempt).
+
+B. Use st.cache_data for data and visualization outputs
+
+Cache fetch_member_data and heavy plotting (like ARIMA) to avoid re-computation.
+
+C. Parameterize thresholds and tune rules
+
+Expose HIGH_RISK_THRESHOLD as a config in .env or Streamlit sidebar; let the user change thresholds.
+
+D. Avoid shipping .streamlit/secrets.toml or .git/ in zipped submission
+
+Ensure secrets.toml is not committed (or redact secrets). Use .gitignore.
+
+E. Add a lightweight test harness
+
+Create tests/test_data.py to assert calculate_risk_metrics() returns expected columns and risk categories.
+
+F. Make visualizations interactive (optional)
+
+Replace some Matplotlib graphs with Plotly for interactive zooming in Streamlit.
+
+G. Add role-based features & audit logs for enterprise
+
+Add a secure audit log (append-only) for AI queries and their responses (for compliance).
+
+6) Example: small remediation plan generation (Agent extension)
+
+If you want the agent to also return a short step-by-step remediation plan (action items that can be exported), you can extend run_liquidity_agent to parse the model output into a simple JSON structure and offer a button to “Export actions to CSV / Tasks”.
+
+7) How to test everything quickly
+
+Set environment variables in Replit: GEMINI_API_KEY, SF_USER, SF_PASS, SF_ACCOUNT.
+
+Start Streamlit: streamlit run app.py (or run via Replit preview).
+
+Load the dashboard; ensure you can see the table.
+
+Type a query into the “Liquidity Advisor” box and click Run Agent.
+
+If Gemini fails (no API), test with a mock response inside ai_utils.py:
+
+def get_ai_response(prompt, model="gemini-2.5-flash", temperature=0.3):
+    return "MOCK: This is a test response. (No Gemini key configured.)"
+
+
+Replace later with the real call.
+
+8) Example Unit Test (for calculate_risk_metrics)
+
+Add a simple pytest in tests/test_data.py:
+
+import pandas as pd
+from data import calculate_risk_metrics
+
+def test_calculate_risk_metrics_basic():
+    df = pd.DataFrame([
+        {"member_id":"M1","cash_buffer_usd":1000,"exposure_usd":2000},
+        {"member_id":"M2","cash_buffer_usd":5000,"exposure_usd":1000},
+    ])
+    out = calculate_risk_metrics(df)
+    assert "risk_ratio" in out.columns
+    assert out.loc[out.member_id=="M1","risk_ratio"].iloc[0] == 2.0
+    # risk category check (adjust depending on your thresholds)
+    assert out.loc[out.member_id=="M1","risk_level"].iloc[0] in ["HIGH","MEDIUM","LOW"]
+
+9) Security & governance pointers
+
+Never commit secrets.toml with keys — use environment variables for Replit and CI.
+
+Mask any user input logs — do not log API keys or full responses in plain logs.
+
+Consider adding a small consent banner that AI-generated content is for advisory only (important in finance).
